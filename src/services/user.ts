@@ -1,6 +1,9 @@
 import { prismaClient } from "../lib/db";
 import { createHmac, randomBytes } from "node:crypto";
 import JWT from "jsonwebtoken";
+
+const secret = process.env.SECRET_KEY || "your_Secret";
+
 export interface createUserProps {
   firstName: string;
   lastName: string;
@@ -19,6 +22,12 @@ class UserServices {
   }
   private static getUserByEmail(email: string) {
     return prismaClient.user.findUnique({ where: { email } });
+  }
+  public static getUserById(id: string) {
+    return prismaClient.user.findUnique({ where: { id } });
+  }
+  public static decodeJwtToken(token: string) {
+    return JWT.verify(token, secret);
   }
   public static createUser(props: createUserProps) {
     const { firstName, lastName, email, password } = props;
@@ -44,7 +53,6 @@ class UserServices {
     const userHashedPassword = UserServices.generateHash(userSalt, password);
     if (user.password !== userHashedPassword)
       throw new Error("Invalid credentials");
-    const secret = process.env.SECRET_KEY || "your_Secret";
     const token = JWT.sign({ id: user.id, email: user.email }, secret);
     return token;
   }
